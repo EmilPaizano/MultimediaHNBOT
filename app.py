@@ -1,10 +1,10 @@
 import os
 import logging
 from dotenv import load_dotenv
-from telegram import InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, Update
-from telegram.ext import filters, ApplicationBuilder, ContextTypes,MessageHandler, CommandHandler,CallbackQueryHandler
+from telegram import InlineKeyboardMarkup, InputMessageContent, InputTextMessageContent, KeyboardButton, ReplyKeyboardMarkup, Update, InlineQueryResultArticle
+from telegram.ext import filters, ApplicationBuilder, ContextTypes,MessageHandler, CommandHandler,CallbackQueryHandler,InlineQueryHandler
 
-from dzzrDwn import search_song_byname, download_song
+from dzzrDwn import search_song_byname, download_song, search_song_inline
 
 load_dotenv() #carga vr de entorno
 
@@ -24,37 +24,46 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Hola, soy un MultimediaBot, conmigo puedes descargar todas las canciones que se te ocurran, solo tienes que ingresar el nombre de la cancion, si recuerdas su autor seria mucho mejor, tendras resultados mas precisos")
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Utiliza @MMHN_bot [nombre de la cancion] para realizar las busquedas")
+    
 
-# async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     FirstKeyboard = [[KeyboardButton(text = "FRUITS",)]]
-#     Menu = ReplyKeyboardMarkup(FirstKeyboard)
-#     await context.bot.send_message(chat_id = update.effective_chat.id, text = "Seleccione una cancion", reply_markup = Menu)
 
-async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def descargaLink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        
         busqueda = update.message.text
         print(busqueda)
-        keyboard = search_song_byname(busqueda)
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        find_text = "https://www.deezer.com/track/"
+        find_text = "https://www.deezer.com/track/"
+        if find_text in busqueda:
+            try:
+                code_track = busqueda.replace(find_text,"")
 
-        await context.bot.send_message(chat_id=update.effective_chat.id,text="Buscas alguna de estas canciones?", reply_markup=reply_markup)
-        # await update.message.reply_text("Resultados:", reply_markup=reply_markup)
+                filename = download_song(code_track)
+                file_dir = './downloads/'+ filename+".mp3"
+                file_lrc = './downloads/'+ filename+".lrc"
+                await context.bot.send_audio(
+                chat_id=update.effective_chat.id,
+                audio=file_dir,pool_timeout=3600,read_timeout=3600,write_timeout=3600,connect_timeout=3600)
+            
+                os.remove(file_dir)
+                os.remove(file_lrc)
+            except:
+                await context.bot.send_message(update.effective_chat.id,"Ups, algo salio mal con la descarga, estamos trabajando para solucionarlo, gracias por tu paciencia.")
 
-async def descargar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query.data
-        filename = download_song(query)
-        file_dir = './downloads/'+ filename+".mp3"
-        file_lrc = './downloads/'+ filename+".lrc"
+
         
-        await context.bot.send_audio(
-            chat_id=update.effective_chat.id,
-            audio=file_dir,pool_timeout=3600,read_timeout=3600,write_timeout=3600,connect_timeout=3600)
+async def inlineMenu(update:Update,context:ContextTypes.DEFAULT_TYPE):
+        result = search_song_inline(update.inline_query.query)
+        print(len(result))
+        await context.bot.answer_inline_query(update.inline_query.id,results=result)
         
-        await context.bot.delete_message(update.effective_chat.id,update.effective_message.id)
-        os.remove(file_dir)
-        os.remove(file_lrc)
-
-
-
+    
+async def enviarBusquedaInLine(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Utiliza @MMHN_bot [nombre de la cancion] para realizar las busquedas")
 
 
 # servidor que estara pendiente de cualquier mensaje SIEMPRE ABAJO
@@ -64,11 +73,17 @@ if __name__ == '__main__':
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
 
-    buscar_handler = MessageHandler(filters.TEXT,menu)
-    application.add_handler(buscar_handler)
+    descargaLink_handler = MessageHandler(filters.Regex("https://www.deezer.com/track/"),descargaLink)
+    application.add_handler(descargaLink_handler)
 
-    descargar_handler = CallbackQueryHandler(descargar)
-    application.add_handler(descargar_handler)
+    busquedaChat_handler = MessageHandler(filters.TEXT,enviarBusquedaInLine)
+    application.add_handler(busquedaChat_handler)
+
+    # descargar_handler = CallbackQueryHandler(descargar)
+    # application.add_handler(descargar_handler)
+
+    inlineMenu_handler = InlineQueryHandler(inlineMenu)
+    application.add_handler(inlineMenu_handler)
 
     
     

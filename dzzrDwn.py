@@ -1,7 +1,7 @@
 import os
 from pydeezer import Downloader, Deezer
 from pydeezer.constants import track_formats
-from telegram import InlineKeyboardButton
+from telegram import InlineKeyboardButton , InlineQueryResultArticle, InputTextMessageContent
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +15,7 @@ download_dir = "./downloads"
 # BUSQUEDA
 def search_song_byname(track_name):
     track_result =  dezzer.search_tracks(track_name)
+    # print(track_result[1])
     keyboard = []
     for track in track_result:
         id = track["id"]
@@ -37,4 +38,30 @@ def download_song(track_id):
     return(name_track)
     
 # print(download_song("70266759"))
+
+
+def search_song_inline(track_name):
+    track_result =  dezzer.search_tracks(track_name)
+    results = []
+    for track in track_result:
+        imagen = track["album"]["cover_medium"]
+        id = track["id"]
+        nombre = track["title"]
+        link = track["link"]
+        artista = track["artist"]["name"]
+        album = track["album"]["title"]
+        
+
+        results = results+[InlineQueryResultArticle(
+                id=id,
+                title=nombre,
+                description=
+                """Artista: {}.\nAlbum: {}""".format(artista,album)
+                ,
+                input_message_content=InputTextMessageContent(link),
+                thumb_url=imagen,
+                thumb_height=5,
+                thumb_width=5
+        )]
+    return results
 
