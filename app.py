@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from telegram import InlineKeyboardMarkup, InputMessageContent, InputTextMessageContent, KeyboardButton, ReplyKeyboardMarkup, Update, InlineQueryResultArticle
+from telegram import InlineKeyboardMarkup, InputMessageContent, InputTextMessageContent, KeyboardButton, ReplyKeyboardMarkup, Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes,MessageHandler, CommandHandler,CallbackQueryHandler,InlineQueryHandler
 
 from dzzrDwn import search_song_byname, download_song, search_song_inline
@@ -61,9 +61,12 @@ async def inlineMenu(update:Update,context:ContextTypes.DEFAULT_TYPE):
         
     
 async def enviarBusquedaInLine(update:Update,context:ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Utiliza @MMHN_bot [nombre de la cancion] para realizar las busquedas")
+    await context.bot.send
+    # simulating some long processing
+    # sleep(3)
+
+    # sending reply when it's done
+    await update.message.reply_text(text="Hey ya!! You sent me '%s'" % update.message.text)
 
 
 # servidor que estara pendiente de cualquier mensaje SIEMPRE ABAJO
@@ -85,6 +88,10 @@ if __name__ == '__main__':
     inlineMenu_handler = InlineQueryHandler(inlineMenu)
     application.add_handler(inlineMenu_handler)
 
-    
+    # application.run_webhook(
+    #     listen="127.0.0.1",
+    #     port=80,
+    #     url
+    # )
     
     application.run_polling()
